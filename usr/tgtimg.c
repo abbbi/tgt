@@ -283,7 +283,7 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 	if (fault_size != NULL) 
 	    sscanf(fault_size, "%" SCNu64, &faultSize);
 
-    sscanf(capacity, "%" SCNu64, &size);
+	sscanf(capacity, "%" SCNu64, &size);
 	if (size == 0)
 		size = 8000;
 
@@ -305,7 +305,7 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 	if (faultSize != -1)
 		printf("Medium causes Error after size: %li\n", faultSize);
 
-    memset(&mi, 0, sizeof(mi));
+	memset(&mi, 0, sizeof(mi));
 
 	mi.tape_fmt_version = TGT_TAPE_VERSION;
 	mi.max_capacity = size * 1048576;
