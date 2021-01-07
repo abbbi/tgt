@@ -63,8 +63,9 @@ struct MAM_info {
 	uint8_t dirty;
 
 	/* For Fault injection */
-	uint64_t fault_size;     /* After this size, MEDIUM_ERROR is simulated */
-	uint64_t fault_block;    /* This block, is at fault, writing to it shall cause MEDIUM_ERROR */
+	uint64_t fault_size;   /* After this size, MEDIUM_ERROR is simulated */
+	uint64_t fault_block;  /* First faulty block, writing to it shall cause MEDIUM_ERROR */
+	uint64_t fault_block_end;    /* Last faulty block, for ranges */
 };
 
 struct ssc_info {

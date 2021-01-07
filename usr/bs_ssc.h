@@ -98,6 +98,7 @@ struct MAM {
 
 	uint64_t fault_size;
 	uint64_t fault_block;
+	uint64_t fault_block_end;
 
 	uint8_t __reserved[7];
 };

@@ -50,7 +50,7 @@ enum {
 
 static char program_name[] = "tgtimg";
 
-static char *short_options = "ho:Y:b:s:t:f:B:S:";
+static char *short_options = "ho:Y:b:s:t:f:B:S:E:";
 
 struct option const long_options[] = {
 	{"help", no_argument, NULL, 'h'},
@@ -61,6 +61,7 @@ struct option const long_options[] = {
 	{"type", required_argument, NULL, 't'},
 	{"file", required_argument, NULL, 'f'},
 	{"fault-block", required_argument, NULL, 'B'},
+	{"fault-block-end", required_argument, NULL, 'E'},
 	{"fault-size", required_argument, NULL, 'S'},
 	{"thin-provisioning", no_argument, NULL, 'T'},
 	{NULL, 0, NULL, 0},
@@ -85,7 +86,8 @@ Linux SCSI Target Framework Image File Utility, version %s\n\
 				(disk) for disk devices\n\
 			[path] is a newly created file\n\
             For fault injection (tape):\n\
-			[fault-block] block number that is errnous\n\
+			[fault-block] starting block number that is errnous\n\
+			[fault-block-end] end of block range that is errnous\n\
 			[fault-size] beyond media size, every write action causes error\n\
   --op show --device-type tape --file=[path]\n\
 			dump the tape image file contents.\n\
@@ -253,6 +255,8 @@ static int ssc_show(char *path)
 			printf(" fault_size: %li\n", mam.fault_size);
 		if (mam.fault_block != -1)
 			printf(" fault_block: %li\n", mam.fault_block);
+		if (mam.fault_block_end != -1)
+			printf(" fault_block_end: %li\n", mam.fault_block_end);
 		printf("\n");
 	}
 
@@ -268,7 +272,7 @@ static int ssc_show(char *path)
 }
 
 static int ssc_new(int op, char *path, char *barcode, char *capacity,
-		   char *media_type, char *fault_block, char *fault_size)
+		   char *media_type, char *fault_block, char *fault_block_end, char *fault_size)
 {
 	struct blk_header_info hdr, *h = &hdr;
 	struct MAM_info mi;
@@ -276,10 +280,19 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 	uint8_t current_media[1024];
 	uint64_t size;
 	uint64_t faultBlock = -1;
+	uint64_t faultBlockEnd = -1;
 	uint64_t faultSize = -1;
 
-	if (fault_block != NULL)
+	if (fault_block != NULL) {
 	    sscanf(fault_block, "%" SCNu64, &faultBlock);
+
+		if (fault_block_end != NULL) {
+			sscanf(fault_block_end, "%" SCNu64, &faultBlockEnd);
+		} else {
+			sscanf(fault_block, "%" SCNu64, &faultBlockEnd);
+		}
+    }
+
 	if (fault_size != NULL) 
 	    sscanf(fault_size, "%" SCNu64, &faultSize);
 
@@ -301,7 +314,9 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 	       (uint64_t)sizeof(struct MAM), (uint64_t)SSC_BLK_HDR_SIZE);
 
 	if (faultBlock != -1)
-		printf("Errnous block: %li\n", faultBlock);
+		printf("Fault block: %li\n", faultBlock);
+	if (faultBlockEnd != -1)
+		printf("Fault block end: %li\n", faultBlockEnd);
 	if (faultSize != -1)
 		printf("Medium causes Error after size: %li\n", faultSize);
 
@@ -331,6 +346,7 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 
 	mi.fault_size = faultSize;
 	mi.fault_block = faultBlock;
+	mi.fault_block_end = faultBlockEnd;
 
 	syslog(LOG_DAEMON|LOG_INFO, "TAPE %s being created", path);
 
@@ -370,7 +386,7 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 }
 
 static int ssc_ops(int op, char *path, char *barcode, char *capacity,
-		   char *media_type, char *fault_block, char *fault_size)
+		   char *media_type, char *fault_block, char *fault_block_end, char *fault_size)
 {
 	if (op == OP_NEW) {
 		if (!media_type) {
@@ -392,7 +408,7 @@ static int ssc_ops(int op, char *path, char *barcode, char *capacity,
 			eprintf("Missing the capacity param\n");
 			usage(1);
 		}
-		return ssc_new(op, path, barcode, capacity, media_type, fault_block, fault_size);
+		return ssc_new(op, path, barcode, capacity, media_type, fault_block, fault_block_end, fault_size);
 	} else if (op == OP_SHOW)
 		return ssc_show(path);
 	else {
@@ -536,6 +552,7 @@ int main(int argc, char **argv)
 	int thin = 0;
 	char *fault_size = NULL;
 	char *fault_block = NULL;
+	char *fault_block_end = NULL;
 
 	while ((ch = getopt_long(argc, argv, short_options,
 				 long_options, &longindex)) >= 0) {
@@ -567,6 +584,9 @@ int main(int argc, char **argv)
 		case 'B':
 			fault_block = optarg;
 			break;
+		case 'E':
+			fault_block_end = optarg;
+			break;
 		case 'S':
 			fault_size = optarg;
 			break;
@@ -593,7 +613,7 @@ int main(int argc, char **argv)
 
 	switch (dev_type) {
 	case TYPE_TAPE:
-		ssc_ops(op, path, barcode, media_capacity, media_type, fault_block, fault_size);
+		ssc_ops(op, path, barcode, media_capacity, media_type, fault_block, fault_block_end, fault_size);
 		break;
 	case TYPE_MMC:
 		mmc_ops(op, path, media_type);

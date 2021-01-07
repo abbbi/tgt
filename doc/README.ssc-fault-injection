@@ -11,6 +11,9 @@ This happens by using the following options on tgtimg:
   If attempt to access block on this media, every write operation
   will return with sense key MEDIUM_ERROR
 
+  --fault-block-end
+  End of the block range which should be errnous, defaults to
+  same value as fault-block
 
 Example with --fault-size:
 

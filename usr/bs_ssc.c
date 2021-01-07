@@ -454,6 +454,7 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 	    dprintf("Fault injection enabled for tape: %s\n", mam->barcode);
 	    if (mam->fault_block != -1)
 	        dprintf(" Fault Block: %li\n", mam->fault_block);
+	        dprintf(" Fault Block End: %li\n", mam->fault_block_end);
 	    if (mam->fault_size != -1)
 	        dprintf(" Fault Size: %li\n", mam->fault_size);
 	}
@@ -530,7 +531,8 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 			}
 		}
 		if (mam->fault_block != -1) {
-			if (mam->fault_block == (h->blk_num-1)) {
+			if((mam->fault_block == h->blk_num-1)
+				|| (mam->fault_block <= h->blk_num && h->blk_num <= mam->fault_block_end)) {
 				dprintf("Fault injection, block matches: %lu\n",
 					h->blk_num);
 					sense_data_build(cmd, MEDIUM_ERROR,
