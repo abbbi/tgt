@@ -434,6 +434,7 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 {
 	struct ssc_info *ssc = dtype_priv(cmd->dev);
 	struct blk_header_info *h = &ssc->c_blk;
+	struct MAM_info *mam = &ssc->mam;
 	int ret, code;
 	uint32_t length, i;
 	int result = SAM_STAT_GOOD;
@@ -448,17 +449,6 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 	i = 0;
 	code = 0;
 	ssc = dtype_priv(cmd->dev);
-
-	struct MAM_info *mam = &ssc->mam;
-	if (mam->fault_size != -1 || mam->fault_block != -1) {
-	    dprintf("Fault injection enabled for tape: %s\n", mam->barcode);
-	    if (mam->fault_block != -1)
-	        dprintf(" Fault Block: %li\n", mam->fault_block);
-	    if (mam->fault_block_end != -1)
-	        dprintf(" Fault Block End: %li\n", mam->fault_block_end);
-	    if (mam->fault_size != -1)
-	        dprintf(" Fault Size: %li\n", mam->fault_size);
-	}
 
 	switch (cmd->scb[0]) {
 	case REZERO_UNIT:
@@ -510,6 +500,16 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 		break;
 
 	case WRITE_6:
+		if (mam->fault_size != -1 || mam->fault_block != -1) {
+			dprintf("Fault injection enabled for tape: %s\n", mam->barcode);
+			if (mam->fault_block != -1)
+				dprintf(" Fault Block: %li\n", mam->fault_block);
+			if (mam->fault_block_end != -1)
+				dprintf(" Fault Block End: %li\n", mam->fault_block_end);
+			if (mam->fault_size != -1)
+				dprintf(" Fault Size: %li\n", mam->fault_size);
+		}
+
 		fixed = cmd->scb[1] & 1;
 
 		buf = scsi_get_out_buffer(cmd);
