@@ -454,6 +454,7 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 	    dprintf("Fault injection enabled for tape: %s\n", mam->barcode);
 	    if (mam->fault_block != -1)
 	        dprintf(" Fault Block: %li\n", mam->fault_block);
+	    if (mam->fault_block_end != -1)
 	        dprintf(" Fault Block End: %li\n", mam->fault_block_end);
 	    if (mam->fault_size != -1)
 	        dprintf(" Fault Size: %li\n", mam->fault_size);
