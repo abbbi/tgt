@@ -61,6 +61,10 @@ struct MAM_info {
 	uint8_t vendor_unique[256];
 
 	uint8_t dirty;
+
+	/* For Fault injection */
+	uint64_t fault_size;     /* After this size, MEDIUM_ERROR is simulated */
+	uint64_t fault_block;    /* This block, is at fault, writing to it shall cause MEDIUM_ERROR */
 };
 
 struct ssc_info {

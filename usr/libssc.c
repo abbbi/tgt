@@ -101,6 +101,9 @@ int ssc_read_mam_info(int fd, struct MAM_info *i)
 
 	SSC_GET_MAM_INFO_ARRAY(vendor_unique);
 
+	SSC_GET_MAM_INFO_VAL(fault_size, 64);
+	SSC_GET_MAM_INFO_VAL(fault_block, 64);
+
 	SSC_GET_MAM_INFO_VAL(dirty, 8);
 
 	return 0;
@@ -169,6 +172,9 @@ int ssc_write_mam_info(int fd, struct MAM_info *i)
 	SSC_PUT_MAM_INFO_ARRAY(media_pool);
 
 	SSC_PUT_MAM_INFO_ARRAY(vendor_unique);
+
+	SSC_PUT_MAM_INFO_VAL(fault_block, 64);
+	SSC_PUT_MAM_INFO_VAL(fault_size, 64);
 
 	SSC_PUT_MAM_INFO_VAL(dirty, 8);
 

@@ -449,6 +449,15 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 	code = 0;
 	ssc = dtype_priv(cmd->dev);
 
+	struct MAM_info *mam = &ssc->mam;
+	if (mam->fault_size != -1 || mam->fault_block != -1) {
+	    dprintf("Fault injection enabled for tape: %s\n", mam->barcode);
+	    if (mam->fault_block != -1)
+	        dprintf(" Fault Block: %li\n", mam->fault_block);
+	    if (mam->fault_size != -1)
+	        dprintf(" Fault Size: %li\n", mam->fault_size);
+	}
+
 	switch (cmd->scb[0]) {
 	case REZERO_UNIT:
 		dprintf("**** Rewind ****\n");
@@ -508,6 +517,27 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 		if (!fixed) {
 			block_length = length;
 			count = 1;
+		}
+
+		if (mam->fault_size != -1) {
+			if (current_size(cmd) >= mam->fault_size) {
+				dprintf("Fault injection size %ld current: %ld hit cause media error\n",
+					mam->fault_size, current_size(cmd));
+				    sense_data_build(cmd, MEDIUM_ERROR,
+						    ASC_WRITE_ERROR);
+				    result = SAM_STAT_CHECK_CONDITION;
+				    break;
+			}
+		}
+		if (mam->fault_block != -1) {
+			if (mam->fault_block == (h->blk_num-1)) {
+				dprintf("Fault injection, block matches: %lu\n",
+					h->blk_num);
+					sense_data_build(cmd, MEDIUM_ERROR,
+						    ASC_WRITE_ERROR);
+				    result = SAM_STAT_CHECK_CONDITION;
+				    break;
+			}
 		}
 
 		for (i = 0, ret = 0; i < count; i++) {

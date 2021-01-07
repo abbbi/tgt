@@ -95,6 +95,10 @@ struct MAM {
 	uint8_t vendor_unique[256];
 
 	uint8_t dirty;
+
+	uint64_t fault_size;
+	uint64_t fault_block;
+
 	uint8_t __reserved[7];
 };
 

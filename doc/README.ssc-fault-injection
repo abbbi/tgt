@@ -1,0 +1,68 @@
+The fault injection feature allows to create "errnous"
+VTL tapes to simulate different error cases.
+
+This happens by using the following options on tgtimg:
+
+  --fault-size
+  After Virtual media has reached size, every write operation
+  will return with sense key MEDIUM_ERROR
+
+  --fault-block
+  If attempt to access block on this media, every write operation
+  will return with sense key MEDIUM_ERROR
+
+
+Example with --fault-size:
+
+ 1) Create VTL with fault-size option:
+
+  tgtimg --op new --device-type tape --type DATA --barcode TAPE001 --size 500 --file ${VTL}/TAPE001 --fault-size 122880
+
+ 2) View the media fault injection options to confirm:
+
+  ./tgtimg --op show --device-type tape --file ${VTL}/TAPE002
+  [..]
+  Fault Injection parameters:
+    fault_size: 122880
+
+ While writing to this VTL, TGT will check for reached size
+ and if size is reached, every write operation will cause
+ MEDIA_ERROR, this operation will be logged by the tgtd daemon:
+
+  tape_rdwr_request(454) Fault injection enabled for tape: TAPE001
+  tgtd: tgtd: tape_rdwr_request(458)  Fault Size: 122880
+  tgtd: tape_rdwr_request(525) Fault injection size 122880 current: 124632 hit cause media error
+
+ The Process writing to the tape will fail with input/output error:
+
+  tar: /dev/nst0: Cannot write: Input/output error
+  tar: Error is not recoverable: exiting now
+
+
+Example with --fault-blocK.
+
+ 1) Create VTL which has errnous block number 10:
+
+  tgtimg --op new --device-type tape --type DATA --barcode TAPE002 --size 500 --file ${VTL}/TAPE002 --fault-block 10
+
+ 2) View the media fault injection options to confirm:
+
+  ./tgtimg --op show --device-type tape --file /home/abi/vtl/TAPE002
+  [..]
+    Fault Injection parameters:
+     fault_block: 10
+
+ During write operation following error is logged:
+
+    tgtd: tape_rdwr_request(456)  Fault Block: 10
+    tgtd: tape_rdwr_request(535) Fault injection, block matches: 11
+
+ The write process accessing this particular block will fail:
+
+   tar: /dev/nst0: Cannot write: Input/output error
+
+ any block accessed afterwards will succeed:
+
+   tar cvf /dev/nst0 /etc/fstab
+   tar: Removing leading `/' from member names
+   /etc/fstab
