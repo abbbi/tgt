@@ -322,16 +322,17 @@ static int resp_var_read(struct scsi_cmd *cmd, uint8_t *buf, uint32_t length,
 
 		put_unaligned_be32(val, info);
 
-		if (h->blk_type == BLK_EOD)
-			sense_data_build(cmd, 0x40 | BLANK_CHECK,
-					 NO_ADDITIONAL_SENSE);
-		else if (h->blk_type == BLK_FILEMARK)
+		if (h->blk_type == BLK_EOD) {
+			sense_data_build(cmd, NO_SENSE, ASC_END_OF_DATA);
+			return SAM_STAT_CHECK_CONDITION;
+		} else if (h->blk_type == BLK_FILEMARK) {
 			ssc_sense_data_build(cmd, NO_SENSE | SENSE_FILEMARK,
 					     ASC_MARK, info, sizeof(info));
-		else
+		} else {
 			ssc_sense_data_build(cmd, NO_SENSE | 0x20,
 					     NO_ADDITIONAL_SENSE,
 					     info, sizeof(info));
+		}
 
 		if (length > h->blk_sz)
 			scsi_set_in_resid_by_actual(cmd, length - h->blk_sz);
