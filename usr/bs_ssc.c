@@ -552,10 +552,10 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 				&& h->blk_num <= mam->fault_block_end)) {
 				dprintf("Fault injection, block matches: %lu\n",
 					h->blk_num);
-					sense_data_build(cmd, MEDIUM_ERROR,
-						    ASC_WRITE_ERROR);
-				    result = SAM_STAT_CHECK_CONDITION;
-				    break;
+				sense_data_build(cmd, MEDIUM_ERROR,
+						ASC_WRITE_ERROR);
+				result = SAM_STAT_CHECK_CONDITION;
+				break;
 			}
 		}
 
