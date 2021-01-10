@@ -456,7 +456,7 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 		dprintf("**** Rewind ****\n");
 		if (resp_rewind(cmd->dev) || mam->fault_rewind == 1) {
 			if (mam->fault_rewind == 1)
-				dprintf("Fault injection: rewind causes error\n");
+				dprintf("Fault injection during rewind\n");
 			sense_data_build(cmd,
 				MEDIUM_ERROR, ASC_SEQUENTIAL_POSITION_ERR);
 			result = SAM_STAT_CHECK_CONDITION;
@@ -539,12 +539,11 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 
 		if (mam->fault_size != -1) {
 			if (current_size(cmd) >= mam->fault_size) {
-				dprintf("Fault injection size %ld current: %ld: media error\n",
-					mam->fault_size, current_size(cmd));
-				    sense_data_build(cmd, MEDIUM_ERROR,
-						    ASC_WRITE_ERROR);
-				    result = SAM_STAT_CHECK_CONDITION;
-				    break;
+				dprintf("Fault injection, fault-size hit\n");
+				sense_data_build(cmd, MEDIUM_ERROR,
+						ASC_WRITE_ERROR);
+				result = SAM_STAT_CHECK_CONDITION;
+				break;
 			}
 		}
 		if (mam->fault_block != -1) {

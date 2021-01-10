@@ -78,10 +78,14 @@ static void usage(int status)
 		printf("\
 Linux SCSI Target Framework Image File Utility, version %s\n\
 \n\
-  --op new --device-type tape --barcode=[code] --size=[size] --type=[type]\n\
-			--file=[path] [--thin-provisioning] --fault-block=[blocknum] \n\
-			[--fault-block-end=[blocknum]] --fault-size=[fault-size]\n\
-			[--fault-filemark] [--fault-rewind]\n\
+	--op new --device-type tape --barcode=[code] \
+--size=[size] --type=[type] --file=[path]\n\
+			[--thin-provisioning]\n\
+			--fault-block=[blocknum]\n\
+			[--fault-block-end=[blocknum]]\n\
+			--fault-size=[fault-size]\n\
+			[--fault-filemark]\n\
+			[--fault-rewind]\n\
 			\n\
 		create a new tape image file.\n\
 			[code] is a string of chars.\n\
@@ -299,11 +303,10 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 
 	if (fault_block != NULL) {
 		sscanf(fault_block, "%" SCNu64, &faultBlock);
-		if (fault_block_end != NULL) {
+		if (fault_block_end != NULL)
 			sscanf(fault_block_end, "%" SCNu64, &faultBlockEnd);
-		} else {
+		else
 			sscanf(fault_block, "%" SCNu64, &faultBlockEnd);
-		}
 	}
 
 	if (fault_size != NULL)
@@ -404,9 +407,10 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 	return 0;
 }
 
-static int ssc_ops(int op, char *path, char *barcode, char *capacity,
-			char *media_type, char *fault_block, char *fault_block_end,
-			char *fault_size, int fault_filemark, int fault_rewind)
+static int ssc_ops(int op, char *path, char *barcode,
+		char *capacity, char *media_type, char *fault_block,
+		char *fault_block_end, char *fault_size,
+		int fault_filemark, int fault_rewind)
 {
 	if (op == OP_NEW) {
 		if (!media_type) {
