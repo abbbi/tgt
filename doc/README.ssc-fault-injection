@@ -18,6 +18,9 @@ This happens by using the following options on tgtimg:
   --fault-filemark
   If attempt is made to write filemark, MEDIUM_ERROR is caused
 
+  --fault-rewind
+  If attempt is made to rewind tape, MEDIUM_ERROR is caused
+
 Example with --fault-size:
 
  1) Create VTL with fault-size option:

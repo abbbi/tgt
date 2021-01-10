@@ -454,7 +454,9 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 	switch (cmd->scb[0]) {
 	case REZERO_UNIT:
 		dprintf("**** Rewind ****\n");
-		if (resp_rewind(cmd->dev)) {
+		if (resp_rewind(cmd->dev) || mam->fault_rewind == 1) {
+			if (mam->fault_rewind == 1)
+				dprintf("Fault injection: rewind causes error\n");
 			sense_data_build(cmd,
 				MEDIUM_ERROR, ASC_SEQUENTIAL_POSITION_ERR);
 			result = SAM_STAT_CHECK_CONDITION;

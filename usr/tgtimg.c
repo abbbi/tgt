@@ -50,7 +50,7 @@ enum {
 
 static char program_name[] = "tgtimg";
 
-static char *short_options = "ho:Y:b:s:t:f:B:S:E:F:";
+static char *short_options = "ho:Y:b:s:t:f:B:S:E:F:R:";
 
 struct option const long_options[] = {
 	{"help", no_argument, NULL, 'h'},
@@ -64,6 +64,7 @@ struct option const long_options[] = {
 	{"fault-block-end", required_argument, NULL, 'E'},
 	{"fault-size", required_argument, NULL, 'S'},
 	{"fault-filemark", no_argument, NULL, 'F'},
+	{"fault-rewind", no_argument, NULL, 'R'},
 	{"thin-provisioning", no_argument, NULL, 'T'},
 	{NULL, 0, NULL, 0},
 };
@@ -91,6 +92,7 @@ Linux SCSI Target Framework Image File Utility, version %s\n\
 			[fault-block-end] end of block range that is errnous\n\
 			[fault-size] beyond media size, every write action causes error\n\
 			[fault-filemark] writing filemarks causes error\n\
+			[fault-rewind] rewinding tape causes error\n\
   --op show --device-type tape --file=[path]\n\
 			dump the tape image file contents.\n\
 			[path] is the tape image file\n\
@@ -251,7 +253,8 @@ static int ssc_show(char *path)
 	}
 	printf("\n");
 
-	if (mam.fault_size != -1 || mam.fault_block != -1 || mam.fault_filemark != 0) {
+	if (mam.fault_size != -1 || mam.fault_block != -1 || mam.fault_filemark != 0
+            || mam.fault_rewind != 0) {
 		printf("Fault Injection parameters:\n");
 		if(mam.fault_size != -1)
 			printf(" fault_size: %li\n", mam.fault_size);
@@ -259,8 +262,10 @@ static int ssc_show(char *path)
 			printf(" fault_block: %li\n", mam.fault_block);
 		if (mam.fault_block_end != -1)
 			printf(" fault_block_end: %li\n", mam.fault_block_end);
-		if (mam.fault_filemark != -1)
+		if (mam.fault_filemark != 0)
 			printf(" fault_filemark: %i\n", mam.fault_filemark);
+		if (mam.fault_rewind != 0)
+			printf(" fault_rewind: %i\n", mam.fault_rewind);
 		printf("\n");
 	}
 
@@ -277,7 +282,7 @@ static int ssc_show(char *path)
 
 static int ssc_new(int op, char *path, char *barcode, char *capacity,
 		   char *media_type, char *fault_block, char *fault_block_end, char *fault_size,
-		   int fault_filemark)
+		   int fault_filemark, int fault_rewind)
 {
 	struct blk_header_info hdr, *h = &hdr;
 	struct MAM_info mi;
@@ -326,6 +331,8 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 		printf("Medium causes Error after size: %li\n", faultSize);
 	if (fault_filemark != 0)
 		printf("Medium causes Error during filemark write");
+	if (fault_rewind != 0)
+		printf("Medium causes Error during rewind");
 
 	memset(&mi, 0, sizeof(mi));
 
@@ -355,6 +362,7 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 	mi.fault_block = faultBlock;
 	mi.fault_block_end = faultBlockEnd;
 	mi.fault_filemark = fault_filemark;
+	mi.fault_rewind = fault_rewind;
 
 	syslog(LOG_DAEMON|LOG_INFO, "TAPE %s being created", path);
 
@@ -395,7 +403,7 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 
 static int ssc_ops(int op, char *path, char *barcode, char *capacity,
 		   char *media_type, char *fault_block, char *fault_block_end, char *fault_size,
-		   int fault_filemark)
+		   int fault_filemark, int fault_rewind)
 {
 	if (op == OP_NEW) {
 		if (!media_type) {
@@ -418,7 +426,7 @@ static int ssc_ops(int op, char *path, char *barcode, char *capacity,
 			usage(1);
 		}
 		return ssc_new(op, path, barcode, capacity, media_type, fault_block, fault_block_end,
-				fault_size,fault_filemark);
+				fault_size, fault_filemark, fault_rewind);
 	} else if (op == OP_SHOW)
 		return ssc_show(path);
 	else {
@@ -564,6 +572,7 @@ int main(int argc, char **argv)
 	char *fault_block = NULL;
 	char *fault_block_end = NULL;
 	int fault_filemark = 0;
+	int fault_rewind = 0;
 
 	while ((ch = getopt_long(argc, argv, short_options,
 				 long_options, &longindex)) >= 0) {
@@ -604,6 +613,9 @@ int main(int argc, char **argv)
 		case 'F':
 			fault_filemark = 1;
 			break;
+		case 'R':
+			fault_rewind = 1;
+			break;
 		default:
 			eprintf("unrecognized option '%s'\n", optarg);
 			usage(1);
@@ -628,7 +640,7 @@ int main(int argc, char **argv)
 	switch (dev_type) {
 	case TYPE_TAPE:
 		ssc_ops(op, path, barcode, media_capacity, media_type, fault_block,
-				fault_block_end, fault_size, fault_filemark);
+				fault_block_end, fault_size, fault_filemark, fault_rewind);
 		break;
 	case TYPE_MMC:
 		mmc_ops(op, path, media_type);

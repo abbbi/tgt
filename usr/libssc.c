@@ -105,6 +105,7 @@ int ssc_read_mam_info(int fd, struct MAM_info *i)
 	SSC_GET_MAM_INFO_VAL(fault_block, 64);
 	SSC_GET_MAM_INFO_VAL(fault_block_end, 64);
 	SSC_GET_MAM_INFO_VAL(fault_filemark, 8);
+	SSC_GET_MAM_INFO_VAL(fault_rewind, 8);
 
 	SSC_GET_MAM_INFO_VAL(dirty, 8);
 
@@ -179,6 +180,7 @@ int ssc_write_mam_info(int fd, struct MAM_info *i)
 	SSC_PUT_MAM_INFO_VAL(fault_block, 64);
 	SSC_PUT_MAM_INFO_VAL(fault_block_end, 64);
 	SSC_PUT_MAM_INFO_VAL(fault_filemark, 8);
+	SSC_PUT_MAM_INFO_VAL(fault_rewind, 8);
 
 	SSC_PUT_MAM_INFO_VAL(dirty, 8);
 
