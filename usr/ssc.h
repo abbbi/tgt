@@ -66,6 +66,7 @@ struct MAM_info {
 	uint64_t fault_size;   /* After this size, MEDIUM_ERROR is simulated */
 	uint64_t fault_block;  /* First faulty block, writing to it shall cause MEDIUM_ERROR */
 	uint64_t fault_block_end;    /* Last faulty block, for ranges */
+	uint8_t fault_filemark;    /* Writing filemark returns MEDIUM_ERROR */
 };
 
 struct ssc_info {

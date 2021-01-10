@@ -462,6 +462,14 @@ static void tape_rdwr_request(struct scsi_cmd *cmd)
 		break;
 
 	case WRITE_FILEMARKS:
+		if (mam->fault_filemark == 1) {
+			dprintf("Fault injection enabled for tape: %s\n", mam->barcode);
+			dprintf(" Fault Filemark during filemark write\n");
+		    sense_data_build(cmd, MEDIUM_ERROR, ASC_WRITE_ERROR);
+			result = SAM_STAT_CHECK_CONDITION;
+			break;
+		}
+
 		ret = get_unaligned_be24(&cmd->scb[2]);
 		dprintf("*** Write %d filemark%s ***\n", ret,
 			((ret > 1) || (ret < 0)) ? "s" : "");
