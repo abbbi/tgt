@@ -80,8 +80,8 @@ Linux SCSI Target Framework Image File Utility, version %s\n\
 \n\
   --op new --device-type tape --barcode=[code] --size=[size] --type=[type]\n\
 			--file=[path] [--thin-provisioning] --fault-block=[blocknum] \n\
-			[--fault-block-end=[blocknum]] --fault-size=[fault-size] [--fault-filemark]\n\
-			[--fault-rewind]\n\
+			[--fault-block-end=[blocknum]] --fault-size=[fault-size]\n\
+			[--fault-filemark] [--fault-rewind]\n\
 			\n\
 		create a new tape image file.\n\
 			[code] is a string of chars.\n\
@@ -91,10 +91,10 @@ Linux SCSI Target Framework Image File Utility, version %s\n\
 				(dvd+r) for cd devices\n\
 				(disk) for disk devices\n\
 			[path] is a newly created file\n\
-		fault injection related parameters:\n\
+		fault injection related parameters.\n\
 			[blocknum] block number on tape is errnous\n\
 			[blocknum] end of block range that is errnous\n\
-			[fault-size] beyond media size, every write action causes error\n\
+			[fault-size] beyond size, write action causes error\n\
 			--fault-filemark writing filemarks causes error\n\
 			--fault-rewind rewinding tape causes error\n\
   --op show --device-type tape --file=[path]\n\
@@ -257,10 +257,10 @@ static int ssc_show(char *path)
 	}
 	printf("\n");
 
-	if (mam.fault_size != -1 || mam.fault_block != -1 || mam.fault_filemark != 0
-            || mam.fault_rewind != 0) {
+	if (mam.fault_size != -1 || mam.fault_block != -1
+			|| mam.fault_filemark != 0 || mam.fault_rewind != 0) {
 		printf("Fault Injection parameters:\n");
-		if(mam.fault_size != -1)
+		if (mam.fault_size != -1)
 			printf(" fault_size: %li\n", mam.fault_size);
 		if (mam.fault_block != -1)
 			printf(" fault_block: %li\n", mam.fault_block);
@@ -285,8 +285,8 @@ static int ssc_show(char *path)
 }
 
 static int ssc_new(int op, char *path, char *barcode, char *capacity,
-		   char *media_type, char *fault_block, char *fault_block_end, char *fault_size,
-		   int fault_filemark, int fault_rewind)
+		   char *media_type, char *fault_block, char *fault_block_end,
+		   char *fault_size, int fault_filemark, int fault_rewind)
 {
 	struct blk_header_info hdr, *h = &hdr;
 	struct MAM_info mi;
@@ -298,17 +298,16 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 	uint64_t faultSize = -1;
 
 	if (fault_block != NULL) {
-	    sscanf(fault_block, "%" SCNu64, &faultBlock);
-
+		sscanf(fault_block, "%" SCNu64, &faultBlock);
 		if (fault_block_end != NULL) {
 			sscanf(fault_block_end, "%" SCNu64, &faultBlockEnd);
 		} else {
 			sscanf(fault_block, "%" SCNu64, &faultBlockEnd);
 		}
-    }
+	}
 
-	if (fault_size != NULL) 
-	    sscanf(fault_size, "%" SCNu64, &faultSize);
+	if (fault_size != NULL)
+		sscanf(fault_size, "%" SCNu64, &faultSize);
 
 	sscanf(capacity, "%" SCNu64, &size);
 	if (size == 0)
@@ -406,8 +405,8 @@ static int ssc_new(int op, char *path, char *barcode, char *capacity,
 }
 
 static int ssc_ops(int op, char *path, char *barcode, char *capacity,
-		   char *media_type, char *fault_block, char *fault_block_end, char *fault_size,
-		   int fault_filemark, int fault_rewind)
+			char *media_type, char *fault_block, char *fault_block_end,
+			char *fault_size, int fault_filemark, int fault_rewind)
 {
 	if (op == OP_NEW) {
 		if (!media_type) {
@@ -429,8 +428,9 @@ static int ssc_ops(int op, char *path, char *barcode, char *capacity,
 			eprintf("Missing the capacity param\n");
 			usage(1);
 		}
-		return ssc_new(op, path, barcode, capacity, media_type, fault_block, fault_block_end,
-				fault_size, fault_filemark, fault_rewind);
+		return ssc_new(op, path, barcode, capacity, media_type,
+				fault_block, fault_block_end, fault_size,
+				fault_filemark, fault_rewind);
 	} else if (op == OP_SHOW)
 		return ssc_show(path);
 	else {
@@ -643,8 +643,9 @@ int main(int argc, char **argv)
 
 	switch (dev_type) {
 	case TYPE_TAPE:
-		ssc_ops(op, path, barcode, media_capacity, media_type, fault_block,
-				fault_block_end, fault_size, fault_filemark, fault_rewind);
+		ssc_ops(op, path, barcode, media_capacity, media_type,
+		    fault_block, fault_block_end, fault_size,
+			fault_filemark, fault_rewind);
 		break;
 	case TYPE_MMC:
 		mmc_ops(op, path, media_type);
