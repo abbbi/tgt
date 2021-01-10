@@ -78,8 +78,12 @@ static void usage(int status)
 		printf("\
 Linux SCSI Target Framework Image File Utility, version %s\n\
 \n\
-  --op new --device-type tape --barcode=[code] --size=[size] --type=[type] --file=[path] [--thin-provisioning]\n\
-			create a new tape image file.\n\
+  --op new --device-type tape --barcode=[code] --size=[size] --type=[type]\n\
+			--file=[path] [--thin-provisioning] --fault-block=[blocknum] \n\
+			[--fault-block-end=[blocknum]] --fault-size=[fault-size] [--fault-filemark]\n\
+			[--fault-rewind]\n\
+			\n\
+		create a new tape image file.\n\
 			[code] is a string of chars.\n\
 			[size] is media size(in megabytes).\n\
 			[type] is media type \n\
@@ -87,12 +91,12 @@ Linux SCSI Target Framework Image File Utility, version %s\n\
 				(dvd+r) for cd devices\n\
 				(disk) for disk devices\n\
 			[path] is a newly created file\n\
-            For fault injection (tape):\n\
-			[fault-block] starting block number that is errnous\n\
-			[fault-block-end] end of block range that is errnous\n\
+		fault injection related parameters:\n\
+			[blocknum] block number on tape is errnous\n\
+			[blocknum] end of block range that is errnous\n\
 			[fault-size] beyond media size, every write action causes error\n\
-			[fault-filemark] writing filemarks causes error\n\
-			[fault-rewind] rewinding tape causes error\n\
+			--fault-filemark writing filemarks causes error\n\
+			--fault-rewind rewinding tape causes error\n\
   --op show --device-type tape --file=[path]\n\
 			dump the tape image file contents.\n\
 			[path] is the tape image file\n\
