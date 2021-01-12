@@ -323,8 +323,9 @@ static int resp_var_read(struct scsi_cmd *cmd, uint8_t *buf, uint32_t length,
 		put_unaligned_be32(val, info);
 
 		if (h->blk_type == BLK_EOD) {
-			sense_data_build(cmd, NO_SENSE, ASC_END_OF_DATA);
-			return SAM_STAT_CHECK_CONDITION;
+			ssc_sense_data_build(cmd, NO_SENSE | 0x20,
+					     NO_ADDITIONAL_SENSE,
+					     info, sizeof(info));
 		} else if (h->blk_type == BLK_FILEMARK) {
 			ssc_sense_data_build(cmd, NO_SENSE | SENSE_FILEMARK,
 					     ASC_MARK, info, sizeof(info));
