@@ -14,7 +14,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <linux/fs.h>
 #include <linux/types.h>
+#include <sys/ioctl.h>
+#include <sys/signalfd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "be_byteshift.h"
 
@@ -99,44 +104,6 @@ static inline int between(uint32_t seq1, uint32_t seq2, uint32_t seq3)
 
 extern unsigned long pagesize, pageshift;
 
-#if defined(__NR_signalfd) && defined(USE_SIGNALFD)
-
-/*
- * workaround for broken linux/signalfd.h including
- * usr/include/linux/fcntl.h
- */
-#define _LINUX_FCNTL_H
-
-#include <linux/signalfd.h>
-
-static inline int __signalfd(int fd, const sigset_t *mask, int flags)
-{
-	int fd2, ret;
-
-	fd2 = syscall(__NR_signalfd, fd, mask, _NSIG / 8);
-	if (fd2 < 0)
-		return fd2;
-
-	ret = fcntl(fd2, F_GETFL);
-	if (ret < 0) {
-		close(fd2);
-		return -1;
-	}
-
-	ret = fcntl(fd2, F_SETFL, ret | O_NONBLOCK);
-	if (ret < 0) {
-		close(fd2);
-		return -1;
-	}
-
-	return fd2;
-}
-#else
-#define __signalfd(fd, mask, flags) (-1)
-struct signalfd_siginfo {
-};
-#endif
-
 /* convert string to integer, check for validity of the string numeric format
  * and the natural boundaries of the integer value type (first get a 64-bit
  * value and check that it fits the range of the destination integer).
@@ -208,19 +175,31 @@ void concat_buf_release(struct concat_buf *b);
 
 
 /* If we have recent enough glibc to support PUNCH HOLE we try to unmap
- * the region.
+ * the region of file.
+ * If supported BLKDISCARD, try to unmap the region of block device.
  */
 static inline int unmap_file_region(int fd, off_t offset, off_t length)
 {
+	struct stat st;
+	if (fstat(fd, &st) < 0)
+		return -1;
+	if (S_ISREG(st.st_mode)) {
 #ifdef FALLOC_FL_PUNCH_HOLE
-	if (fallocate(fd, FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE,
-			offset, length) == 0)
-		return 0;
+		if (fallocate(fd, FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE,
+				offset, length) == 0)
+			return 0;
 #endif
+	} else if (S_ISBLK(st.st_mode)) {
+#ifdef BLKDISCARD
+		uint64_t range[] = { offset, length };
+		if (ioctl(fd, BLKDISCARD, &range) == 0)
+			return 0;
+#endif
+	}
 	return -1;
 }
 
-#define BITS_PER_LONG __WORDSIZE
+#define BITS_PER_LONG           LONG_BIT
 #define BITS_PER_BYTE           8
 #define BITS_TO_LONGS(nr)       DIV_ROUND_UP(nr, BITS_PER_BYTE * sizeof(long))
 
